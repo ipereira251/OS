@@ -21,7 +21,7 @@ public class Project1 { //CPU class, changed name for ease of testing
         mode = 0;
         numInstr = 0;
         try{
-            String fileName = "sample3.txt"; //default file to read
+            String fileName = "sample5.txt"; //default file to read
             int interruptTime = 5;  //default number of instructions before interrupt
             if(args.length == 2){
                 fileName = args[0];
@@ -258,7 +258,7 @@ public class Project1 { //CPU class, changed name for ease of testing
                         proc.waitFor();                    //wait for memory to exit
                         System.exit(0); 
                     default: 
-                        System.out.println("Encountered a weird instruction");
+                        System.out.println("Encountered a weird instruction: " + ir);
                         System.exit(0);
                 }
                 ir = read(pc, pw, sc); //fetch next instruction
