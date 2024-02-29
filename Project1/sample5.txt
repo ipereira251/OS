@@ -1,0 +1,250 @@
+.0
+23
+50 //line 1
+23 
+70 //line 2
+23 
+90 //line three
+23 
+110 //line four
+23
+140 //line five
+23 
+210 //line six
+50
+
+
+
+.50 //line one
+1
+2
+14 //set x = two
+23
+500
+1
+10
+14 //set x = ten
+23
+510 //go to underscore loop
+1 
+10
+9
+2 //new line
+24
+
+
+.70 //line two
+1
+32
+9
+2 //space
+1
+11
+14 //x = eleven
+23 
+520 // "/" loop
+1
+92
+9
+2 // print "\"
+1 
+10
+9
+2 //new line
+24
+
+.90 //line three
+1
+11
+14 //x = eleven
+23 
+520 // "/" loop
+1
+2
+14
+23 
+500 //space loop
+1
+92
+9
+2 //print \
+1
+10
+9
+2 //new line
+24
+
+.110 //line four
+1
+124
+9
+2 //print |
+1
+9
+14 //x = nine
+23 
+500
+1
+124
+9
+2 //print |
+1
+2
+14 //x = two
+23
+500
+1
+124
+9
+2 //print |
+1
+10
+9
+2 //new line
+24
+
+.140 //line five 
+1
+124
+9
+2 // |
+1
+91
+9
+2 //[
+1
+93
+9
+2 //]
+1
+32
+9
+2 //space
+1
+124
+9
+2 // |
+1
+32
+9
+2 //space
+1
+124
+9
+2 // |
+1
+32 
+9
+2 //space
+1
+91 
+9 
+2 //[
+1 
+93
+9
+2 //]
+1
+124 
+9
+2 // |
+1
+91 
+9 
+2 //[
+1 
+93
+9
+2 //]
+1
+124
+9
+2 //|
+1
+10
+9
+2 //new line
+24
+
+.210 //line six
+1 
+124 
+9
+2 // |
+1
+3
+14 //x = three
+23
+500 //space loop
+1
+124
+9
+2 // |
+1
+32
+9
+2 //space
+1
+124
+9
+2 // |
+1
+3
+14 //x = three
+23 
+500 //space loop
+1
+124
+9
+2 // |
+1
+2
+14 //x = two
+23 
+500 //space loop
+1
+124
+9
+2 // |
+1
+10
+9
+2 //new line
+24
+
+
+.500
+1 //print space loop
+32
+9
+2
+26 //dec x
+15 // x -> ac
+22 //JNE
+500
+24 //return
+
+.510
+1 //print underscore
+95
+9
+2
+26 //dec x
+15 //copy from x
+22
+510
+24
+
+.520
+1 //print /
+47
+9
+2
+26
+15
+22
+520
+24
+
+.1000 //interrupt handler
+30
