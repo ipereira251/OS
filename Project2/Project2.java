@@ -14,10 +14,15 @@ import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
 public class Project2{
+    private static int numPts = 5;
+    private static int numDrs = 1;
     //semaphores
     private static Semaphore receptionist = new Semaphore(1);
     private static Semaphore mutexFrontDesk = new Semaphore(1);
     private static Semaphore msgFrontDesk = new Semaphore(0);
+    private static Semaphore[] sit = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
     private static Queue<Integer> toReceptionist = new LinkedList<>(); 
     //array of patients
@@ -26,26 +31,33 @@ public class Project2{
 
     public static void main(String[] args){
         //receive command line input for number of patients and doctors
-        int numPts = 1;
-        int numDrs = 1;
-
-        /*
+        
+        numPts = 5;
+        numDrs = 1;
+        
         Thread[] patients = new Thread[numPts];
         Thread[] nurses = new Thread[numDrs];
         Thread[] doctors = new Thread[numDrs];
 
+        //create several patient threads
         for(int i = 0; i < numPts; i++){
             patients[i] = new Thread(new Patient(i));
-            System.out.println("Patient " + i+ " created."); //remove later
             patients[i].start();
-        }*/
-        //create one patient thread
-        Thread pt = new Thread(new Patient(0));
-        pt.start();
+        }
+
         //create one receptionist thread
         Thread rec = new Thread(new Receptionist());
         rec.start();
 
+        try{
+            rec.join();
+            for(int i = 0; i < numPts; i++){
+                patients[i].join();
+            }
+        }
+        catch (InterruptedException e){}
+
+        
     }
     private static class Patient implements Runnable{
         private int ptNum;
@@ -64,6 +76,7 @@ public class Project2{
                 mutexFrontDesk.release();
                 msgFrontDesk.release();
 
+                sit[ptNum].acquire();
                 sit();
 
                 //so on and so forth
@@ -88,24 +101,29 @@ public class Project2{
         }
     }
     private static class Receptionist implements Runnable{
+        private int toCheckIn = numPts;
         private int ptNum;
         public void run(){
-            try {
-                //wait for a message
-                msgFrontDesk.acquire();
-                //get patient number, critical section
-                mutexFrontDesk.acquire();
-                ptNum = toReceptionist.remove();
-                mutexFrontDesk.release();
-                register();
+            while(toCheckIn > 0){
+                try {
+                    //wait for a message
+                    msgFrontDesk.acquire();
+                    //get patient number, critical section
+                    mutexFrontDesk.acquire();
+                    ptNum = toReceptionist.remove();
+                    mutexFrontDesk.release();
+                    register();
+                    sit[ptNum].release();
 
-                //receptionist.release();
+                    receptionist.release();
 
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                toCheckIn--;
             }
-
+            
         }
         private void register(){
             System.out.println("Receptionist registers patient " + ptNum);
