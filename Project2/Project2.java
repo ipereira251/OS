@@ -21,35 +21,40 @@ public class Project2{
     private static int numDrs = 1;
     //semaphores
     private static Semaphore receptionist = new Semaphore(1);
-    private static Semaphore mutexFrontDesk = new Semaphore(1);
-    private static Semaphore msgFrontDesk = new Semaphore(0);
     private static Semaphore nurse = new Semaphore(3);
+    private static Semaphore[] doctor = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
+
+
+    private static Semaphore mutexFrontDesk = new Semaphore(1);
     private static Semaphore mutexNurseStation = new Semaphore(1);
+    private static Semaphore[] mutexDoctorOffice = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
+
+    private static Semaphore msgFrontDesk = new Semaphore(0);
     private static Semaphore msgToNurseStation = new Semaphore(0);
     private static Semaphore msgFromNurseStation = new Semaphore(0);
-    private static Semaphore readyForNurse = new Semaphore(0);
-    private static Semaphore[] doctor = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
-    private static Semaphore[] readyForDoctor = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
     private static Semaphore[] msgDoctorOffice = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
-    private static Semaphore[] mutexDoctorOffice = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
+
+    private static Semaphore readyForNurse = new Semaphore(0);
+    private static Semaphore[] readyForDoctor = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
     private static Semaphore[] leftOffice = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
+
+    private static Semaphore[] leftReceptionist = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                  new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                  new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
+    private static Semaphore[] sit = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
+                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
     private static Semaphore[] takenToDoctor = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
                                                                new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
                                                                new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
-    private static Semaphore[] sit = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
-                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
-                                                     new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
-
     private static Semaphore[] advice = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
                                                         new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
                                                         new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
-    private static Semaphore[] finished = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
-                                                          new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), 
-                                                          new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0), new Semaphore(0)};
-                                                        
+       
+    //queues
     private static Queue<Integer> toReceptionist = new LinkedList<>(); 
     private static Queue<Integer> toNurse = new LinkedList<>();
     private static Queue<Integer> fromNurse = new LinkedList<>();
@@ -57,7 +62,6 @@ public class Project2{
 
     public static void main(String[] args){
         //receive command line input for number of patients and doctors
-         //3 15
         if(args.length == 2){
             if(Integer.parseInt(args[0]) > 3 || Integer.parseInt(args[0]) < 0)
                 System.exit(0);
@@ -69,10 +73,8 @@ public class Project2{
                 numPts = Integer.parseInt(args[1]);
         } else{
             System.exit(0);
-        }
-        //numPts = 3;
-        //numDrs = 1;
-        
+        }        
+        System.out.println("Run with " + numPts + " patients, " + numDrs + " nurses, " + numDrs + " doctors");
         Thread[] patients = new Thread[numPts];
         Thread[] nurses = new Thread[numDrs];
         Thread[] doctors = new Thread[numDrs];
@@ -87,32 +89,22 @@ public class Project2{
         Thread rec = new Thread(new Receptionist());
         rec.setDaemon(true);
         rec.start();
-
-        /*//create a nurse thread (update later)
-        Thread nurse = new Thread(new Nurse(0));
-        nurse.setDaemon(true);
-        nurse.start();*/
         
-        //multiple nurse threads
+        //create several nurse threads
         for(int i = 0; i < numDrs; i++){
             nurses[i] = new Thread(new Nurse(i));
             nurses[i].setDaemon(true);
             nurses[i].start();
         }
 
-        /*//create a doctor thread
-        Thread doctor = new Thread(new Doctor(0));
-        doctor.setDaemon(true);
-        doctor.start();*/
-
-        //multiple doctor threads
+        //create several doctor threads
         for(int i = 0; i < numDrs; i++){
             doctors[i] = new Thread(new Doctor(i));
             doctors[i].setDaemon(true);
             doctors[i].start();
         }
 
-
+        //join patient threads when they're done, all others are daemon threads
         try{
             for(int i = 0; i < numPts; i++){
                 patients[i].join();
@@ -120,7 +112,7 @@ public class Project2{
         }
         catch (InterruptedException e){}
 
-        
+        System.out.println("Simulation complete");
     }
     private static class Patient implements Runnable{
         private int ptNum;
@@ -141,15 +133,16 @@ public class Project2{
 
                 sit[ptNum].acquire();
                 sit();
+                leftReceptionist[ptNum].release();
 
                 nurse.acquire();
-                //get dr/nurse number
+                //get dr/nurse number, critical section
                 msgFromNurseStation.acquire();
                 mutexNurseStation.acquire();
                 drNum = fromNurse.remove();
                 mutexNurseStation.release();
 
-                //give patient number
+                //give number to nurse, critical section
                 mutexNurseStation.acquire();
                 toNurse.add(ptNum);
                 mutexNurseStation.release();
@@ -159,7 +152,7 @@ public class Project2{
                 takenToDoctor[ptNum].acquire();
                 enterDrOffice();
 
-                //give number
+                //give number to dr, critical section
                 mutexDoctorOffice[drNum].acquire();
                 toDoctor.add(ptNum);
                 mutexDoctorOffice[drNum].release();
@@ -168,12 +161,8 @@ public class Project2{
                 advice[ptNum].acquire();
                 receiveAdvice();
 
-                //finished[ptNum].acquire();
                 leave();
                 leftOffice[drNum].release();
-                //doctor[drNum].release();
-            
-                //so on and so forth
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -196,10 +185,9 @@ public class Project2{
         }
     }
     private static class Receptionist implements Runnable{
-        private int toCheckIn = numPts;
         private int ptNum;
         public void run(){
-            while(true){ //change to !finished later
+            while(true){ 
                 try {
                     //wait for a message
                     msgFrontDesk.acquire();
@@ -213,13 +201,13 @@ public class Project2{
                     //notify nurse of patient
                     readyForNurse.release();
 
+                    leftReceptionist[ptNum].acquire();
                     receptionist.release();
 
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                toCheckIn--;
             }
             
         }
@@ -236,14 +224,14 @@ public class Project2{
         public void run(){
             while(true){
                 try{
-                    //tell patient nurse/doctor's name
+                    //tell patient nurse/doctor's name, critical section
                     readyForNurse.acquire();
                     mutexNurseStation.acquire();
                     fromNurse.add(doctorNum);
                     mutexNurseStation.release();
                     msgFromNurseStation.release();
                     
-                    //get patient's name
+                    //get patient's name, critical section
                     msgToNurseStation.acquire();
                     mutexNurseStation.acquire();
                     ptNum = toNurse.remove();
@@ -280,7 +268,7 @@ public class Project2{
                 try{
                     readyForDoctor[doctorNum].acquire();
 
-                    //get patient name
+                    //get patient name, critical section
                     msgDoctorOffice[doctorNum].acquire();
                     mutexDoctorOffice[doctorNum].acquire();
                     ptNum = toDoctor.remove();
