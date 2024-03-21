@@ -4,16 +4,31 @@ The clinic to be simulated has doctors, each of which has their own nurse.  Each
 # Pseudocode:
 Semaphores used: 
 ```
+// indicates when a patient enters the waiting room
 semaphore waiting_room = 0; 
+// represents receptionists available
 semaphore receptionist = 1;
+// represents nurses available
 semaphore nurse = 3;
+// ensures mutually exclusive access to receptionist and nurse queues
 semaphore mutex_front_desk, mutex_nurse_station = 1;
+// ensures mutually exclusive access to queues used to communicate with doctors
 semaphore mutex_doctor_office[3] = {1};
-semaphore msg_front_desk, msg_nurse_station = 0;
+
+// alerts when a new message has been added to the queue
+semaphore msg_front_desk, msg_to_nurse_station, msg_from_nurse_station = 0;
 semaphore msg_doctor_office[3] = {0};
+
+// shows when a patient is waiting for a nurse/doctor
 semaphore ready_for_nurse = 0;
 semaphore ready_for_doctor[3] = {0};
+
+// shows when each patient has been taken to see the doctor by a nurse
+semaphore taken_to_doctor[15] = {0};
+
+// 
 semaphore advice[15] = {0};
+// 
 semaphore doctor[3] = {1};
 //semaphore finished[15] = {0};
 //semaphore max;
@@ -129,9 +144,7 @@ void doctor(){
         dequeue(pt_num);
         signal(mutex_doctor_office[dr_num]);
 
-        visit_pt(pt_num);
         listen_to_pt_symptoms(pt_num);
-
         //give advice, done with this patient 
         signal(advice[pt_num]);
 
