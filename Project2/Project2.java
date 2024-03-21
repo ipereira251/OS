@@ -109,7 +109,7 @@ public class Project2{
         for(int i = 0; i < numDrs; i++){
             doctors[i] = new Thread(new Doctor(i));
             doctors[i].setDaemon(true);
-            nurses[i].start();
+            doctors[i].start();
         }
 
 
@@ -199,7 +199,7 @@ public class Project2{
         private int toCheckIn = numPts;
         private int ptNum;
         public void run(){
-            while(toCheckIn > 0){ //change to !finished later
+            while(true){ //change to !finished later
                 try {
                     //wait for a message
                     msgFrontDesk.acquire();
@@ -276,26 +276,27 @@ public class Project2{
             this.doctorNum = doctorNum;
         }
         public void run(){
-            try{
-                readyForDoctor[doctorNum].acquire();
+            while(true){
+                try{
+                    readyForDoctor[doctorNum].acquire();
 
-                //get patient name
-                msgDoctorOffice[doctorNum].acquire();
-                mutexDoctorOffice[doctorNum].acquire();
-                ptNum = toDoctor.remove();
-                mutexDoctorOffice[doctorNum].release();
-                System.out.println("Doctor read pt name " + ptNum);
+                    //get patient name
+                    msgDoctorOffice[doctorNum].acquire();
+                    mutexDoctorOffice[doctorNum].acquire();
+                    ptNum = toDoctor.remove();
+                    mutexDoctorOffice[doctorNum].release();
 
-                listen();
-                advice[ptNum].release();
+                    listen();
+                    advice[ptNum].release();
 
-                //once patient left, ready for another
-                leftOffice[doctorNum].acquire();
-                doctor[doctorNum].release();
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                    //once patient left, ready for another
+                    leftOffice[doctorNum].acquire();
+                    doctor[doctorNum].release();
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } 
 
         }
         private void listen(){
