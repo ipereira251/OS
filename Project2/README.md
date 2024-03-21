@@ -1,10 +1,13 @@
+# Project Overview: 
+This project will simulate a visit to the doctor's office using threads for each patient, nurse, doctor, and receptionist. They will be coordinated solely through the use of Java Semaphores(java.util.concurrent.Semaphore). The program will receive the number of patients and doctor/nurse pairs through command-line inputs. A maximum of 15 patients and 3 doctor/nurse pairs are allowed.
+
+    Usage: java Project2 <number of patients> <number of doctors>
+
 # Problem Overview: 
 The clinic to be simulated has doctors, each of which has their own nurse.  Each doctor has an office of his or her own in which to visit patients.  Patients will enter the clinic to see a doctor, which should be randomly assigned.  Initially, a patient enters the waiting room and waits to register with the receptionist.  Once registered, the patient sits in the waiting room until the nurse calls.  The receptionist lets the nurse know a patient is waiting.  The nurse directs the patient to the doctor’s office and tells the doctor that a patient is waiting.  The doctor visits the patient and listens to the patient’s symptoms.  The doctor advises the patient on the action to take.  The patient then leaves.
 
 # Pseudocode:
 Semaphores used: 
-
-# ADD MUTEX FOR RECEPTIONIST
 
 ```
 //indicates the availability of the receptionist, nurse(s), doctor(s)
