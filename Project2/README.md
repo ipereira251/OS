@@ -1,10 +1,11 @@
+make more concurrent processes with nurses?
 # Project Overview: 
 This project will simulate a visit to the doctor's office using threads for each patient, nurse, doctor, and receptionist. They will be coordinated solely through the use of Java Semaphores(java.util.concurrent.Semaphore). The program will receive the number of patients and doctor/nurse pairs through command-line inputs. A maximum of 15 patients and 3 doctor/nurse pairs are allowed.
 
     Usage: java Project2 <number of patients> <number of doctors>
 
 # Problem Overview: 
-The clinic to be simulated has doctors, each of which has their own nurse.  Each doctor has an office of his or her own in which to visit patients.  Patients will enter the clinic to see a doctor, which should be randomly assigned.  Initially, a patient enters the waiting room and waits to register with the receptionist.  Once registered, the patient sits in the waiting room until the nurse calls.  The receptionist lets the nurse know a patient is waiting.  The nurse directs the patient to the doctor’s office and tells the doctor that a patient is waiting.  The doctor visits the patient and listens to the patient’s symptoms.  The doctor advises the patient on the action to take.  The patient then leaves.
+The clinic to be simulated has doctors, each of which has their own nurse.  Each doctor has an office of his or her own in which to visit patients.  Patients will enter the clinic to see a doctor, which are randomly assigned at runtime.  Initially, a patient enters the waiting room and waits to register with the receptionist.  Once registered, the patient sits in the waiting room until the nurse calls.  The receptionist lets the nurse know a patient is waiting.  The nurse directs the patient to the doctor’s office and tells the doctor that a patient is waiting.  The doctor visits the patient and listens to the patient’s symptoms.  The doctor advises the patient on the action to take.  The patient then leaves.
 
 # Pseudocode:
 Semaphores used: 
@@ -12,19 +13,18 @@ Semaphores used:
 ```
 //indicates the availability of the receptionist, nurse(s), doctor(s)
 semaphore receptionist = 1;
-semaphore nurse = 3;
+semaphore nurse[3] = {1};
 semaphore doctor[3] = {1};
 
-//ensures mutually exclusive access to the communication queues
-semaphore mutex_front_desk = 1;
-semaphore mutex_nurse_station = 1;
-semaphore mutex_doctor_office[3] = {1};
+//ensures mutually exclusive access to the queues that show which patients are waiting for which employee
+semaphore mutex_waiting_for_nurse[3] = {1};
+semaphore mutex_waiting_for_doctor[3] = {1};
 
-//signals when a new message has been added to communication queues
+//ensures mutually exclusive access to communication queue between patient and receptionist
+semaphore mutex_front_desk = 1;
+
+//signals when a new message has been added to the communication queue for patient and receptionist
 semaphore msg_front_desk = 0;
-semaphore msg_to_nurse_station = 0;
-semaphore msg_from_nurse_station = 0;
-semaphore msg_doctor_office[3] = {0};
 
 //used for classes to signal to next 
 //e.g., receptionist signals ready_for_nurse so the nurse wakes up and begins handling patient
@@ -32,8 +32,8 @@ semaphore ready_for_nurse = 0;
 semaphore ready_for_doctor[3] = {0};
 semaphore left_office[3] = {0};
 
-//patient-specific semaphores to keep track of progress
-semaphore left_reeptionist[15] = {0};
+//patient-specific semaphores to keep track of progress through appointment
+semaphore left_receptionist[15] = {0};
 semaphore sit[15] = {0};
 semaphore taken_to_doctor[15] = {0};
 semaphore advice[15] = {0};
@@ -56,29 +56,11 @@ void patient(){
     sit();
     signal(left_receptionist[pt_num]);
 
-    wait(nurse);
+    wait(nurse[dr_num]);
 
-    //get dr/nurse number
-    wait(msg_nurse_station);
-    wait(mutex_nurse_station);
-    dequeue(dr_num);
-    signal(mutex_nurse_station);
-
-    //give number to nurse
-    wait(mutex_nurse_station);
-    enqueue(pt_num);	
-    signal(mutex_nurse_station);
-    signal(msg_nurse_station);
-
-    //wait until nurse takes it to doctor, then enter
+    //wait until nurse takes them to doctor, then enter
     wait(takenToDoctor[dr_num]);
     enterDrOffice();
-
-    //give number to doctor
-    wait(mutex_doctor_office[dr_num]);
-    enqueue(pt_num);	
-    signal(mutex_doctor_office[dr_num]);
-    signal(msg_doctor_office[dr_num]);
 
     //receive advice
     wait(advice[pt_num]);
@@ -103,8 +85,14 @@ void receptionist(){
         register(pt_num);
         signal(sit[pt_num]);
 
+        dr_num = doctor_of(pt_num);
+
+        wait(mutex_waiting_for_nurse[dr_num]);
+        dequeue(pt_num);
+        signal(mutex_waiting_for_nurse[dr_num]);
+
         //notify nurse of patient
-        signal(ready_for_nurse); 
+        signal(ready_for_nurse[dr_num]); 
 
         //wait for the other patient to leave
         wait(left_receptionist[pt_num]);
@@ -121,21 +109,20 @@ void nurse(){
     while(true){
         wait(ready_for_nurse);
 
-        //give dr_num to patient
-        wait(mutex_nurse_station);
-        enqueue(dr_num);
-        signal(mutex_nurse_station);
-        signal(msg_from_nurse_station);
-
         //get patient num
-        wait(msg_to_nurse_station);
-        wait(mutex_nurse_station);
+        wait(mutex_waiting_for_nurse);
         dequeue(pt_num);
-        signal(mutex_nurse_station);
+        signal(mutex_waiting_for_nurse);
 
         //once doctor is ready, take patient, notify doctor
         wait(doctor[dr_num]);
         take_to_doctor();
+
+        //add patient to dr's queue
+        wait(mutex_waiting_for_doctor[dr_num]);
+        dequeue(pt_num);
+        signal(mutex_waiting_for_doctor[dr_num]);
+
         signal(taken_to_doctor[pt_num]);
         signal(ready_for_doctor[dr_num]);
 
@@ -151,11 +138,10 @@ void doctor(){
     while(true){
         wait(ready_for_doctor[dr_num]);
         
-        //get patient name
-        wait(msg_doctor_office[dr_num]);
-        wait(mutex_doctor_office[dr_num]);
+        //get patient name from queue
+        wait(mutex_waiting_for_doctor[dr_num]);
         dequeue(pt_num);
-        signal(mutex_doctor_office[dr_num]);
+        signal(mutex_waiting_for_doctor[dr_num]);
 
         //listen, then notify patient that advice is available
         listen();

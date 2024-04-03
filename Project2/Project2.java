@@ -14,27 +14,29 @@
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class Project2{
     private static int numPts = 3;
     private static int numDrs = 1;
+    private static Thread[] patients;
+    private static Thread[] nurses;
+    private static Thread[] doctors;
+    private static int[] drLookup = new int[15];
     //semaphores
     private static Semaphore receptionist = new Semaphore(1);
-    private static Semaphore nurse = new Semaphore(3);
+    private static Semaphore[] nurse = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
     private static Semaphore[] doctor = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
 
 
     private static Semaphore mutexFrontDesk = new Semaphore(1);
-    private static Semaphore mutexNurseStation = new Semaphore(1);
-    private static Semaphore[] mutexDoctorOffice = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
+    private static Semaphore[] mutexWaitingForNurse = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
+    private static Semaphore[] mutexWaitingForDoctor = new Semaphore[]{new Semaphore(1), new Semaphore(1), new Semaphore(1)};
 
     private static Semaphore msgFrontDesk = new Semaphore(0);
-    private static Semaphore msgToNurseStation = new Semaphore(0);
-    private static Semaphore msgFromNurseStation = new Semaphore(0);
-    private static Semaphore[] msgDoctorOffice = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
-    private static Semaphore readyForNurse = new Semaphore(0);
+    private static Semaphore[] readyForNurse = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
     private static Semaphore[] readyForDoctor = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
     private static Semaphore[] leftOffice = new Semaphore[]{new Semaphore(0), new Semaphore(0), new Semaphore(0)};
 
@@ -56,12 +58,13 @@ public class Project2{
        
     //queues
     private static Queue<Integer> toReceptionist = new LinkedList<>(); 
-    private static Queue<Integer> toNurse = new LinkedList<>();
-    private static Queue<Integer> fromNurse = new LinkedList<>();
-    private static Queue<Integer> toDoctor = new LinkedList<>();
+    @SuppressWarnings("unchecked")
+    private static Queue<Integer>[] waitingForNurse = new LinkedList[]{new LinkedList<>(), new LinkedList<>(), new LinkedList<>()};
+    @SuppressWarnings("unchecked")
+    private static Queue<Integer>[] waitingForDoctor = new LinkedList[]{new LinkedList<>(), new LinkedList<>(), new LinkedList<>()};
 
     public static void main(String[] args){
-        //receive command line input for number of patients and doctors
+        //receive command line input for number of doctors and patients
         if(args.length == 2){
             if(Integer.parseInt(args[0]) > 3 || Integer.parseInt(args[0]) < 0)
                 System.exit(0);
@@ -75,13 +78,28 @@ public class Project2{
             System.exit(0);
         }        
         System.out.println("Run with " + numPts + " patients, " + numDrs + " nurses, " + numDrs + " doctors");
-        Thread[] patients = new Thread[numPts];
-        Thread[] nurses = new Thread[numDrs];
-        Thread[] doctors = new Thread[numDrs];
+        createThreads(numDrs, numPts);
+
+        //join patient threads when they're done, all others are daemon threads
+        try{
+            for(int i = 0; i < numPts; i++){
+                patients[i].join();
+            }
+        }
+        catch (InterruptedException e){}
+
+        System.out.println("Simulation complete");
+    }
+    private static void createThreads(int numDrs, int numPts){
+        patients = new Thread[numPts];
+        nurses = new Thread[numDrs];
+        doctors = new Thread[numDrs];
 
         //create several patient threads
         for(int i = 0; i < numPts; i++){
-            patients[i] = new Thread(new Patient(i));
+            int x = getRandomDr();
+            drLookup[i] = x;
+            patients[i] = new Thread(new Patient(i, x));
             patients[i].start();
         }
 
@@ -103,22 +121,17 @@ public class Project2{
             doctors[i].setDaemon(true);
             doctors[i].start();
         }
-
-        //join patient threads when they're done, all others are daemon threads
-        try{
-            for(int i = 0; i < numPts; i++){
-                patients[i].join();
-            }
-        }
-        catch (InterruptedException e){}
-
-        System.out.println("Simulation complete");
+    }
+    private static int getRandomDr(){
+        Random r = new Random();
+        return r.nextInt(numDrs);
     }
     private static class Patient implements Runnable{
         private int ptNum;
         private int drNum;
-        public Patient(int ptNum){
+        public Patient(int ptNum, int drNum){
             this.ptNum = ptNum;
+            this.drNum = drNum;
         }
         public void run(){
             enter();
@@ -131,33 +144,20 @@ public class Project2{
                 mutexFrontDesk.release();
                 msgFrontDesk.release();
 
+                //wait until receptionist says to sit
                 sit[ptNum].acquire();
                 sit();
+                //let receptionist know they're gone
                 leftReceptionist[ptNum].release();
 
-                nurse.acquire();
-                //get dr/nurse number, critical section
-                msgFromNurseStation.acquire();
-                mutexNurseStation.acquire();
-                drNum = fromNurse.remove();
-                mutexNurseStation.release();
-
-                //give number to nurse, critical section
-                mutexNurseStation.acquire();
-                toNurse.add(ptNum);
-                mutexNurseStation.release();
-                msgToNurseStation.release();
+                //wait for nurse
+                nurse[drNum].acquire();
 
                 //taken to doctor
                 takenToDoctor[ptNum].acquire();
                 enterDrOffice();
 
-                //give number to dr, critical section
-                mutexDoctorOffice[drNum].acquire();
-                toDoctor.add(ptNum);
-                mutexDoctorOffice[drNum].release();
-                msgDoctorOffice[drNum].release();
-
+                //get advice from doctor
                 advice[ptNum].acquire();
                 receiveAdvice();
 
@@ -186,6 +186,7 @@ public class Project2{
     }
     private static class Receptionist implements Runnable{
         private int ptNum;
+        private int drNum;
         public void run(){
             while(true){ 
                 try {
@@ -195,11 +196,21 @@ public class Project2{
                     mutexFrontDesk.acquire();
                     ptNum = toReceptionist.remove();
                     mutexFrontDesk.release();
+
+                    //register patient, tell to sit down
                     register();
                     sit[ptNum].release();
 
+                    //look up which doctor the patient will see
+                    drNum = drLookup[ptNum];
+
+                    //critical section for queue of patients waiting for this nurse
+                    mutexWaitingForNurse[drNum].acquire();
+                    waitingForNurse[drNum].add(ptNum);
+                    mutexWaitingForNurse[drNum].release();
+                
                     //notify nurse of patient
-                    readyForNurse.release();
+                    readyForNurse[drNum].release();
 
                     leftReceptionist[ptNum].acquire();
                     receptionist.release();
@@ -223,27 +234,30 @@ public class Project2{
         }
         public void run(){
             while(true){
-                try{
-                    //tell patient nurse/doctor's name, critical section
-                    readyForNurse.acquire();
-                    mutexNurseStation.acquire();
-                    fromNurse.add(doctorNum);
-                    mutexNurseStation.release();
-                    msgFromNurseStation.release();
-                    
-                    //get patient's name, critical section
-                    msgToNurseStation.acquire();
-                    mutexNurseStation.acquire();
-                    ptNum = toNurse.remove();
-                    mutexNurseStation.release();
+                try{                  
+                    readyForNurse[doctorNum].acquire();
 
+                    //get patient number, queue needs critical section
+                    mutexWaitingForNurse[doctorNum].acquire();
+                    ptNum = waitingForNurse[doctorNum].remove();
+                    mutexWaitingForNurse[doctorNum].release();
+
+                    //wait until doctor is ready
                     doctor[doctorNum].acquire();
                     takeToDoctor();
+
+                    //add to dr queue, critical section
+                    mutexWaitingForDoctor[doctorNum].acquire();
+                    waitingForDoctor[doctorNum].add(ptNum);
+                    mutexWaitingForDoctor[doctorNum].release();
+
+                    //tell patient they're here
                     takenToDoctor[ptNum].release();
+                    //tell doctor that a patient is here
                     readyForDoctor[doctorNum].release();
 
                     //nurse now available
-                    nurse.release();
+                    nurse[doctorNum].release();
                 }
                 catch (InterruptedException e) {
                     e.printStackTrace();
@@ -268,12 +282,12 @@ public class Project2{
                 try{
                     readyForDoctor[doctorNum].acquire();
 
-                    //get patient name, critical section
-                    msgDoctorOffice[doctorNum].acquire();
-                    mutexDoctorOffice[doctorNum].acquire();
-                    ptNum = toDoctor.remove();
-                    mutexDoctorOffice[doctorNum].release();
+                    //get patient number from queue, critical section
+                    mutexWaitingForDoctor[doctorNum].acquire();
+                    ptNum = waitingForDoctor[doctorNum].remove();
+                    mutexWaitingForDoctor[doctorNum].release();
 
+                    //listen, then give advice to patient
                     listen();
                     advice[ptNum].release();
 
