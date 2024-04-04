@@ -1,4 +1,3 @@
-make more concurrent processes with nurses?
 # Project Overview: 
 This project will simulate a visit to the doctor's office using threads for each patient, nurse, doctor, and receptionist. They will be coordinated solely through the use of Java Semaphores(java.util.concurrent.Semaphore). The program will receive the number of patients and doctor/nurse pairs through command-line inputs. A maximum of 15 patients and 3 doctor/nurse pairs are allowed.
 
