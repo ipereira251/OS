@@ -3,13 +3,6 @@
  * IAP200002
  * CS 4348.001
  * Greg Ozbirn 
- * 
- * Notes: 
- * signal: release
- * wait: acquire
- * 
- * setDaemon() for everyone but patients
- * join patients
  */
 
 import java.util.LinkedList;
@@ -18,8 +11,7 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class Project2{
-    private static int numPts = 3;
-    private static int numDrs = 1;
+    private static int numPts, numDrs;
     private static Thread[] patients;
     private static Thread[] nurses;
     private static Thread[] doctors;
@@ -134,8 +126,8 @@ public class Project2{
             this.drNum = drNum;
         }
         public void run(){
-            enter();
             try {
+                enter();
                 receptionist.acquire();
                 
                 //give patient number to receptionist, critical section
