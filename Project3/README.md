@@ -1,0 +1,3 @@
+# Project Overview
+This project will simulate a scheduler scheduling a set of jobs. It will demonstrate two scheduling algorithms (First Come, First Served and Round Robin) given a tab-delimited text file given from the command line. The format of the text file should have one line for each job, where each line has a job name, a start time and a duration.  The job name must be a letter from A-Z.  The first job should be named A, and the remaining jobs should be named sequentially following the alphabet, so if there are five jobs, they are named A-E.  The arrival times of these jobs should be in order.
+    Usage: java Project3 jobs.txt
