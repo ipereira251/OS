@@ -16,9 +16,9 @@ public class Project3{
         //read file
         if(args.length == 1 && readFile(new File(args[0]))){ 
             //uses java's short-circuiting, if args.length is not 1, will not try to read file
-            System.out.println(jobs);
 
             //fcfs scheduler
+            System.out.println("FCFS\n");
             printJobs();
             while(!allCompleted())
                 FCFSScheduler.run();
@@ -26,11 +26,12 @@ public class Project3{
             //reset all jobs to not completed 
             reset(jobs);
             System.out.println();
+
             //rr scheduler
+            System.out.println("RR\n");
             printJobs();
             while(!allCompleted())
                 RRScheduler.run();
-
         }
 
     }
@@ -47,7 +48,6 @@ public class Project3{
                     duration = fileChop.nextInt();
                 jobs.add(new Job(nameString.charAt(0), startTime, duration));
             }
-
             fileChop.close();
             return true;
         } catch (FileNotFoundException e){
@@ -87,6 +87,15 @@ public class Project3{
             //Last job in list to first
             if(currentJob >= jobs.size())
                 currentJob %= jobs.size();
+                
+            //choose next job
+            if(currentJob >= eligible.length)
+                currentJob %= eligible.length;
+            while(!eligible[currentJob] || jobs.get(currentJob).isCompleted()){
+                currentJob++;
+                if(currentJob >= eligible.length)
+                    currentJob %= eligible.length;
+            }
             
             //print jobs
             for(int i = 0; i < jobs.size(); i++){
@@ -112,8 +121,8 @@ public class Project3{
                     eligible[i] = true;
             
             //choose new current job
-            if(currentJob >= jobs.size())
-                currentJob %= jobs.size();
+            if(currentJob >= eligible.length)
+                currentJob %= eligible.length;
             while(!eligible[currentJob] || jobs.get(currentJob).isCompleted()){
                 currentJob++;
                 if(currentJob >= eligible.length)
