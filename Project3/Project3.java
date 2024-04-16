@@ -73,10 +73,22 @@ public class Project3{
     }
     public static class FCFSScheduler{
         private static int currentJob = 0;
+        private static int currentTime = 0;
+        private static boolean[] eligible = new boolean[jobs.size()];
         public static void run(){
+            for(int i = 0; i < jobs.size(); i++)
+                if(jobs.get(i).getStartTime() <= currentTime)
+                    eligible[i] = true;
+            
             //switch to new job if current one is done       
             if(jobs.get(currentJob).isCompleted())
                 currentJob++;
+            
+            //Last job in list to first
+            if(currentJob >= jobs.size())
+                currentJob %= jobs.size();
+            
+            //print jobs
             for(int i = 0; i < jobs.size(); i++){
                 if(i == currentJob){
                     System.out.print("X ");
@@ -86,21 +98,29 @@ public class Project3{
                 }
             }
             System.out.println(); //new line
+            currentTime++;
         }
     }
     public class RRScheduler{
         private static int currentJob = 0;
+        private static int currentTime = 0;
+        private static boolean[] eligible = new boolean[jobs.size()];
         public static void run(){
+            //add jobs into eligible
+            for(int i = 0; i < jobs.size(); i++)
+                if(jobs.get(i).getStartTime() <= currentTime)
+                    eligible[i] = true;
+            
             //choose new current job
             if(currentJob >= jobs.size())
                 currentJob %= jobs.size();
-            while(jobs.get(currentJob).isCompleted()){
+            while(!eligible[currentJob] || jobs.get(currentJob).isCompleted()){
                 currentJob++;
-                if(currentJob >= jobs.size())
-                    currentJob %= jobs.size();
+                if(currentJob >= eligible.length)
+                    currentJob %= eligible.length;
             }
 
-            //run new current job
+            //print jobs
             for(int i = 0; i < jobs.size(); i++){
                 if(i == currentJob){
                     System.out.print("X ");
@@ -109,17 +129,9 @@ public class Project3{
                     System.out.print("  ");
             }
 
-/* 
-            //run new current job
-            for(int i = 0; i < jobs.size(); i++){
-                if(currentJob % jobs.size() == i && !jobs.get(i).isCompleted()){
-                    System.out.print("X ");
-                    jobs.get(i).incNumQuanta();
-                } else
-                    System.out.print("  ");
-            }*/
             System.out.println();
             currentJob++;
+            currentTime++;
         }
     }
  }
