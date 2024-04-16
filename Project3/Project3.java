@@ -25,10 +25,11 @@ public class Project3{
 
             //reset all jobs to not completed 
             reset(jobs);
-
+            System.out.println();
             //rr scheduler
-            //RRScheduler rr = new RRScheduler();
-            //rr.run();
+            printJobs();
+            while(!allCompleted())
+                RRScheduler.run();
 
         }
 
@@ -66,10 +67,11 @@ public class Project3{
         System.out.println();
     }
     public static void reset(ArrayList<Job> jobs){
-        //reset stuff here
+        for(int i = 0; i < jobs.size(); i++){
+            jobs.get(i).resetNumQuanta();
+        }
     }
     public static class FCFSScheduler{
-        //private static int currentTime = 0;
         private static int currentJob = 0;
         public static void run(){
             //switch to new job if current one is done       
@@ -84,20 +86,41 @@ public class Project3{
                 }
             }
             System.out.println(); //new line
-           // currentTime++;
         }
     }
     public class RRScheduler{
-        private int currentTime = 0;
-        private int currentJob = 0;
-        public void run(){
-            //print job names
+        private static int currentJob = 0;
+        public static void run(){
+            //choose new current job
+            if(currentJob >= jobs.size())
+                currentJob %= jobs.size();
+            while(jobs.get(currentJob).isCompleted()){
+                currentJob++;
+                if(currentJob >= jobs.size())
+                    currentJob %= jobs.size();
+            }
 
-            //print simulation
+            //run new current job
+            for(int i = 0; i < jobs.size(); i++){
+                if(i == currentJob){
+                    System.out.print("X ");
+                    jobs.get(i).incNumQuanta();
+                } else 
+                    System.out.print("  ");
+            }
+
+/* 
+            //run new current job
+            for(int i = 0; i < jobs.size(); i++){
+                if(currentJob % jobs.size() == i && !jobs.get(i).isCompleted()){
+                    System.out.print("X ");
+                    jobs.get(i).incNumQuanta();
+                } else
+                    System.out.print("  ");
+            }*/
+            System.out.println();
+            currentJob++;
         }
-    }
-    interface Scheduler{
-        public void run();
     }
  }
  class Job{
@@ -123,6 +146,9 @@ public class Project3{
     }
     public void incNumQuanta(){
         numQuanta++;
+    }
+    public void resetNumQuanta(){
+        numQuanta = 0;
     }
     public boolean isCompleted(){
         return numQuanta == duration;
