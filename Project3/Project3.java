@@ -132,7 +132,7 @@ public class Project3{
             currentTime++;
         }
     }
-    public class RRScheduler{
+    public static class RRScheduler{
         private static int currentJob = 0;
         private static int currentTime = 0;
         private static boolean[] eligible = new boolean[jobs.size()];
