@@ -137,18 +137,29 @@ public class Project3{
         private static int currentTime = 0;
         private static boolean[] eligible = new boolean[jobs.size()];
         public static void run(){
-            //add jobs into eligible
-            for(int i = 0; i < jobs.size(); i++)
-                if(jobs.get(i).getStartTime() <= currentTime)
+            boolean hasEligible = false;
+            //reset all eligible to false
+            for(int i = 0; i < eligible.length; i++)
+                eligible[i] = false;
+                
+            for(int i = 0; i < jobs.size(); i++){
+                if(jobs.get(i).getStartTime() <= currentTime && !jobs.get(i).isCompleted()){
                     eligible[i] = true;
+                    hasEligible = true;
+                }
+            }
             
-            //choose new current job
-            if(currentJob >= eligible.length)
-                currentJob %= eligible.length;
-            while(!eligible[currentJob] || jobs.get(currentJob).isCompleted()){
-                currentJob++;
+            if(!hasEligible){
+                currentJob = -1;
+            } else {
+                //choose new current job
                 if(currentJob >= eligible.length)
                     currentJob %= eligible.length;
+                while(!eligible[currentJob]){
+                    currentJob++;
+                    if(currentJob >= eligible.length)
+                        currentJob %= eligible.length;
+                }
             }
 
             //print jobs
