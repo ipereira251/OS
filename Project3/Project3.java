@@ -33,6 +33,23 @@ public class Project3{
             while(!allCompleted())
                 RRScheduler.run();
         }
+        else{
+            readFile(new File("jobs2.txt"));
+            System.out.println("FCFS\n");
+            printJobs();
+            while(!allCompleted())
+                FCFSScheduler.run();
+
+            //reset all jobs to not completed 
+            reset(jobs);
+            System.out.println();
+
+            //rr scheduler
+            System.out.println("RR\n");
+            printJobs();
+            while(!allCompleted())
+                RRScheduler.run();
+        }
 
     }
     public static boolean readFile(File file){
@@ -72,40 +89,45 @@ public class Project3{
         }
     }
     public static class FCFSScheduler{
-        private static int currentJob = 0;
+        private static int currentJob = -1;
         private static int currentTime = 0;
         private static boolean[] eligible = new boolean[jobs.size()];
         public static void run(){
-            for(int i = 0; i < jobs.size(); i++)
-                if(jobs.get(i).getStartTime() <= currentTime)
-                    eligible[i] = true;
-            
-            //switch to new job if current one is done       
-            if(jobs.get(currentJob).isCompleted())
-                currentJob++;
-            
-            //Last job in list to first
-            if(currentJob >= jobs.size())
-                currentJob %= jobs.size();
-                
-            //choose next job
-            if(currentJob >= eligible.length)
-                currentJob %= eligible.length;
-            while(!eligible[currentJob] || jobs.get(currentJob).isCompleted()){
-                currentJob++;
-                if(currentJob >= eligible.length)
-                    currentJob %= eligible.length;
-            }
-            
-            //print jobs
+            boolean hasEligible = false;
+            //reset all eligible to false 
+            for(int i = 0; i < eligible.length; i++)
+                eligible[i] = false;
             for(int i = 0; i < jobs.size(); i++){
-                if(i == currentJob){
-                    System.out.print("X ");
-                    jobs.get(i).incNumQuanta();
-                } else {
-                    System.out.print("  ");
+                if(jobs.get(i).getStartTime() <= currentTime && !jobs.get(i).isCompleted()){
+                    eligible[i] = true;
+                    hasEligible = true;
                 }
             }
+            
+            if(!hasEligible){
+                currentJob = jobs.size() + 1;
+            } else{
+                currentJob = 0;
+                //choose next job
+                if(currentJob >= eligible.length)
+                    currentJob %= eligible.length;
+                while(!eligible[currentJob]){
+                    currentJob++;
+                    if(currentJob >= eligible.length)
+                        currentJob %= eligible.length;
+                    
+                }
+            }    
+                //print jobs
+                for(int i = 0; i < jobs.size(); i++){
+                    if(i == currentJob){
+                        System.out.print("X ");
+                        jobs.get(i).incNumQuanta();
+                    } else {
+                        System.out.print("  ");
+                    }
+                }
+            
             System.out.println(); //new line
             currentTime++;
         }
