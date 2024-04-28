@@ -2,6 +2,7 @@
  * Isabella Pereira
  * IAP200002
  * CS 4348.001
+ * Spring 2024
  * Greg Ozbirn
  */
 
@@ -18,23 +19,6 @@ public class Project3{
             //uses java's short-circuiting, if args.length is not 1, will not try to read file
 
             //fcfs scheduler
-            System.out.println("FCFS\n");
-            printJobs();
-            while(!allCompleted())
-                FCFSScheduler.run();
-
-            //reset all jobs to not completed 
-            reset(jobs);
-            System.out.println();
-
-            //rr scheduler
-            System.out.println("RR\n");
-            printJobs();
-            while(!allCompleted())
-                RRScheduler.run();
-        }
-        else{
-            readFile(new File("jobs2.txt"));
             System.out.println("FCFS\n");
             printJobs();
             while(!allCompleted())
